@@ -194,6 +194,23 @@ class ApplicationUpdateTests(unittest.TestCase):
                 app.handle_event(pygame.event.Event(kind, pos=(380, 610), button=1))
         self.assertEqual(app.message, '')
 
+    def test_the_hd_menus_busy_card_draws_before_any_data_job(self):
+        """A bulk import's first boot opened the HD main menu under Preparing episodes, and its first frame raised
+        AttributeError (job_title is a data job's alone): Android crashed when the phone woke after the import."""
+        import pygame
+        app = self.app()
+        app.window = pygame.display.set_mode((768, 1024))
+        drawn = []
+        canvas = pygame.Surface((768, 1024))
+        app.shell = SimpleNamespace(render=lambda: canvas, main=SimpleNamespace(
+            draw_busy=lambda canvas, title, text: drawn.append(title)))
+        app.screen, app.job = 'main', Future()
+        for kind in ('previews', 'bulk', 'copying'):
+            app.job_kind = kind
+            with patch.object(app, 'present_frame'):
+                app.render_shell()
+        self.assertEqual(drawn, ['Preparing episodes', 'Importing content', 'Importing content'])
+
     def test_yes_opens_only_the_release_page_then_closes_the_game(self):
         app = self.app()
         opener = app.url_opener = Mock()

@@ -145,6 +145,7 @@ class Application:
         self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix='exp-content')
         self.job = None
         self.job_kind = None
+        self.job_title = None           # a data job's busy title (start_data_job)
         self.progress_text = ''
         self.picker = None
         self.picker_style = None
@@ -868,7 +869,10 @@ class Application:
     def render_shell(self):
         canvas = self.shell.render()
         if self.busy:
-            title = {'previews': 'Preparing episodes', 'data': self.job_title}.get(self.job_kind, 'Importing content')
+            # Only a data job has a title of its own (read only for one: any other busy frame crashed before a data
+            # job had ever run, as the first boot's Preparing episodes after a bulk import).
+            title = (self.job_title if self.job_kind == 'data'
+                     else 'Preparing episodes' if self.job_kind == 'previews' else 'Importing content')
             self.shell.main.draw_busy(canvas, title, self.progress_text if self.job_kind in ('previews', 'data')
                                       else 'Checking and copying your files...')
         elif self.message:
